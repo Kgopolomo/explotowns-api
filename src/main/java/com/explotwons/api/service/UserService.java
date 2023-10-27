@@ -21,8 +21,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -43,7 +49,16 @@ public class UserService implements UserDetailsService {
     private AuthenticationManager authenticationManager;
 
     @Autowired
+    private AmazonS3Service s3Service;
+
+    @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private HttpServletRequest request;
 
     public User register(Register user) {
         // Check if user with the provided username or email already exists
@@ -57,6 +72,7 @@ public class UserService implements UserDetailsService {
         newUser.setUsername(user.getUsername());
         newUser.setEmail(user.getEmail());
         newUser.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        newUser.setAccountCreated(new Date(System.currentTimeMillis()));
 
         return userRepository.save(newUser);
     }
@@ -91,6 +107,8 @@ public class UserService implements UserDetailsService {
         resetToken.setUser(user);
         resetToken.setExpiryDate(new Date(System.currentTimeMillis() + 3600_000)); // 1 hour expiry time
         passwordResetTokenRepository.save(resetToken);
+
+   //     emailService.sendPasswordResetEmail(user, token, request);
 
         return true;
     }
@@ -138,11 +156,29 @@ public class UserService implements UserDetailsService {
     }
 
     public User updateUser(User user) {
-        return userRepository.save(user);
-    }
+        // Fetch the existing user details
+        User existingUser = userRepository.findById(user.getUserId()).orElse(null);
+        if (existingUser == null) {
+            throw new RuntimeException("User not found");
+        }
 
-    public List<SavedExperience> getSavedExperiences(Long userId) {
-        return savedExperienceRepository.findByUserId(userId);
+        // Update allowed fields
+        existingUser.setEmail(user.getEmail());
+        existingUser.setFullName(user.getFullName());
+        existingUser.setLastName(user.getLastName());
+        existingUser.setDateOfBirth(user.getDateOfBirth());
+        existingUser.setPhoneNumber(user.getPhoneNumber());
+        existingUser.setAlternateEmail(user.getAlternateEmail());
+        existingUser.setCountry(user.getCountry());
+        existingUser.setLanguage(user.getLanguage());
+        existingUser.setCurrency(user.getCurrency());
+        existingUser.setTimezone(user.getTimezone());
+        existingUser.setPrivacySettings(user.getPrivacySettings());
+        existingUser.setNotificationSettings(user.getNotificationSettings());
+        existingUser.setPreferences(user.getPreferences());
+        // ... add other fields as needed ...
+
+        return userRepository.save(existingUser);
     }
 
     public SavedExperience saveExperience(Long userId, Long experienceId) {
@@ -155,12 +191,28 @@ public class UserService implements UserDetailsService {
         return savedExperienceRepository.save(experience);
     }
 
-    public void deleteExperience(Long userId, Long experienceId) {
-        SavedExperience experience = savedExperienceRepository.findByUserIdAndExperienceId(userId, experienceId).orElse(null);
-        if (experience != null) {
-            savedExperienceRepository.delete(experience);
-        }
+    public void uploadProfilePicture(User user, MultipartFile file) throws IOException {
+
+        String keyName = "profile-pictures/" + user.getUserId() + "_" + file.getOriginalFilename();
+        s3Service.uploadFile(file, keyName);
+        String s3Url = "https://" + s3Service.getBucketName() + ".s3." + s3Service.getRegion() + ".amazonaws.com/" + keyName;
+        user.setProfilePicture(s3Url);
+        userRepository.save(user);
     }
+
+    public void deleteProfilePicture(User user) {
+        String keyName = user.getProfilePicture().substring(user.getProfilePicture().lastIndexOf("/") + 1);
+        s3Service.deleteFile(keyName);
+        user.setProfilePicture(null);
+        userRepository.save(user);
+    }
+
+//    public void deleteExperience(Long userId, Long experienceId) {
+//        SavedExperience experience = savedExperienceRepository.findByUserIdAndExperienceId(userId, experienceId).orElse(null);
+//        if (experience != null) {
+//            savedExperienceRepository.delete(experience);
+//        }
+//    }
 
 }
 

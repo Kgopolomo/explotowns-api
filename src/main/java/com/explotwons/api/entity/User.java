@@ -37,17 +37,9 @@ public class User {
 //    @OneToMany(mappedBy = "user")
 //    private List<Booking> bookingHistory = new ArrayList<>();
 
-////     Assuming there's a separate Experience entity
-//    @ManyToMany
-//    @JoinTable(
-//            name = "saved_experiences",
-//            joinColumns = @JoinColumn(name = "userId"),
-//            inverseJoinColumns = @JoinColumn(name = "experienceId")
-//    )
-//    private List<Experience> savedExperiences = new ArrayList<>();
-//
-//    // Getters, setters, and other methods...
 
+    @OneToMany(mappedBy = "user")
+    private List<SavedExperience> savedExperiences;
 
     public Long getUserId() {
         return userId;
@@ -208,5 +200,7 @@ public class User {
     public void setPreferences(List<String> preferences) {
         this.preferences = preferences;
     }
+
+
 }
 
