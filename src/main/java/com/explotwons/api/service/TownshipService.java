@@ -1,9 +1,6 @@
 package com.explotwons.api.service;
 
-import com.explotwons.api.entity.Amenities;
-import com.explotwons.api.entity.Demographics;
-import com.explotwons.api.entity.Rating;
-import com.explotwons.api.entity.Township;
+import com.explotwons.api.entity.*;
 import com.explotwons.api.repository.RatingRepository;
 import com.explotwons.api.repository.TownshipRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
 import javax.transaction.Transactional;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +42,35 @@ public class TownshipService {
             }
         }
         return townships;
+    }
+
+    public List<Township> getTopRatedTownships() {
+
+        List<Township> allTownships = townshipRepository.findAll();
+        List<Township> topRatedTownships = new ArrayList<>();
+
+        for (Township township : allTownships) {
+            List<Rating> ratings = township.getRatings();
+
+            if (ratings != null && ratings.size() >= 5) {
+                double totalRating = 0;
+
+                for (Rating rating : ratings) {
+                    totalRating += rating.getRating();
+                }
+
+                double averageRating = totalRating / ratings.size();
+
+                if (averageRating >= 4) {
+                    township.setAverageRating(averageRating);  // Assuming you have a setAverageRating method
+                    topRatedTownships.add(township);
+                }
+            }
+        }
+        // Sort the list based on average rating in descending order
+        topRatedTownships.sort((e1, e2) -> Double.compare(e2.getAverageRating(), e1.getAverageRating()));
+
+        return topRatedTownships;
     }
 
     @Transactional

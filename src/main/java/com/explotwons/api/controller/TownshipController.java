@@ -1,5 +1,6 @@
 package com.explotwons.api.controller;
 
+import com.explotwons.api.entity.Experience;
 import com.explotwons.api.entity.Rating;
 import com.explotwons.api.entity.Township;
 import com.explotwons.api.service.TownshipService;
@@ -20,6 +21,12 @@ public class TownshipController {
     @GetMapping
     public ResponseEntity<List<Township>> getAllTownships(@RequestParam(required = false) String province) {
         return ResponseEntity.ok(townshipService.getAllTownships(province));
+    }
+
+    @GetMapping("/top-rated")
+    public ResponseEntity<List<Township>> getTopRatedTownships() {
+        List<Township> topRatedTownships = townshipService.getTopRatedTownships();
+        return ResponseEntity.ok(topRatedTownships);
     }
 
     @PostMapping

@@ -48,6 +48,9 @@ public class Experience {
     @OneToMany(mappedBy = "experience", cascade = CascadeType.ALL)
     private List<ExperienceRating> ratings;
 
+    @OneToMany(mappedBy = "experience")
+    private List<Booking> bookings;
+
 
     public Long getExperienceId() {
         return experienceId;
@@ -215,5 +218,9 @@ public class Experience {
 
     public void setRatings(List<ExperienceRating> ratings) {
         this.ratings = ratings;
+    }
+
+    public void setBookings(List<Booking> bookings) {
+        this.bookings = bookings;
     }
 }
