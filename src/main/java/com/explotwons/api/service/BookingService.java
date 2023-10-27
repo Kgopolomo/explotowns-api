@@ -49,7 +49,7 @@ public class BookingService {
         return bookingRepository.findByReferenceNumber(reference);
     }
 
-    public Booking CheckIn(String reference){
+    public Booking BookingCheckIn(String reference){
         Booking optionalBooking = bookingRepository.findByReferenceNumber(reference);
 
         if (optionalBooking == null) {

@@ -36,7 +36,7 @@ public class BookingController {
 
     @PostMapping
     public Booking BookingCheckIn(@RequestParam(required = true) String reference) {
-        return bookingService.CheckIn(reference);
+        return bookingService.BookingCheckIn(reference);
     }
 
 }
